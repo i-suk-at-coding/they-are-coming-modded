@@ -1,17 +1,12 @@
 <!DOCTYPE html>
-
 <html lang="en-us">
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <link rel="stylesheet" href="style.css" />
-
     <style>
-        canvas:focus {
-            outline: none;
-        }
-
+        canvas:focus { outline: none; }
         html, body {
             padding: 0;
             margin: 0;
@@ -31,156 +26,180 @@
     <div id="unity-container" class="unity-desktop">
         <canvas id="unity-canvas" tabindex="-1"></canvas>
     </div>
+
     <div id="loading-cover" style="display:none;">
         <div id="unity-loading-bar">
-            <div id="unity-logo"><img src="logo.png" /></div>
+            <div id="unity-logo"><img src="logo.png" alt="logo" /></div>
             <div id="unity-progress-bar-empty" style="display: none;">
                 <div id="unity-progress-bar-full"></div>
             </div>
             <div class="spinner"></div>
         </div>
     </div>
+
     <script>
-        const hideFullScreenButton = "";
-        const buildUrl = "Build";
-        const loaderUrl = buildUrl + "/zombieshooterdone.loader.js";
-        const config = {
-            dataUrl: buildUrl + "/zombieshooterdone.data.br",
-            frameworkUrl: buildUrl + "/zombieshooterdone.framework.js",
-            streamingAssetsUrl: "StreamingAssets",
-            companyName: "OnHitDev",
-            productName: "They Are Coming",
-            productVersion: "1.19"
-        };
-    
-        // Keep the part list for reference only; Unity loader will handle parts automatically.
-        const wasmParts = [
-            `${buildUrl}/zombieshooterdone.wasm.br.part0`,
-            `${buildUrl}/zombieshooterdone.wasm.br.part1`,
-            `${buildUrl}/zombieshooterdone.wasm.br.part2`,
-            `${buildUrl}/zombieshooterdone.wasm.br.part3`
-        ];
-    
-        // Load the Unity loader script and let Unity handle fetching and assembling the .wasm parts.
+    // ---------- CONFIG: use absolute CDN base and locateFile ----------
+    // Change CDN_BASE to your preferred CDN (rawcdn.githack used for quick testing)
+    const CDN_BASE = "https://rawcdn.githack.com/i-suk-at-coding/they-are-coming-modded/main/Build/";
+
+    const loaderUrl = CDN_BASE + "zombieshooterdone.loader.js";
+    const config = {
+        dataUrl: CDN_BASE + "zombieshooterdone.data.br",
+        frameworkUrl: CDN_BASE + "zombieshooterdone.framework.js",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "OnHitDev",
+        productName: "They Are Coming",
+        productVersion: "1.19",
+
+        // locateFile ensures Unity always resolves build files to the CDN base
+        locateFile: (path) => {
+            // path examples: "zombieshooterdone.wasm.br.part0", "zombieshooterdone.wasm"
+            return CDN_BASE + path;
+        }
+    };
+
+    // Keep the part list for reference only; Unity loader will handle parts automatically.
+    const wasmParts = [
+        CDN_BASE + "zombieshooterdone.wasm.br.part0",
+        CDN_BASE + "zombieshooterdone.wasm.br.part1",
+        CDN_BASE + "zombieshooterdone.wasm.br.part2",
+        CDN_BASE + "zombieshooterdone.wasm.br.part3"
+    ];
+
+    // ---------- Load Unity loader script (do NOT merge wasm parts manually) ----------
+    (function loadUnity() {
         const script = document.createElement("script");
         script.src = loaderUrl;
+        script.crossOrigin = "anonymous";
         script.onload = () => {
+            console.log("Unity loader loaded. Config:", {
+                loaderUrl: loaderUrl,
+                dataUrl: config.dataUrl,
+                frameworkUrl: config.frameworkUrl,
+                locateFile: "configured"
+            });
+
             createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {
                 const loader = document.querySelector("#unity-loading-bar");
                 if (loader) loader.style.width = `${progress * 100}%`;
             }).then((unityInstance) => {
-                myGameInstance = unityInstance;
+                window.myGameInstance = unityInstance;
                 document.querySelector("#loading-cover").style.display = "none";
+                console.log("Unity instance created.");
             }).catch((message) => {
                 console.error("Unity loading error:", message);
             });
         };
+        script.onerror = (e) => {
+            console.error("Failed to load Unity loader script:", e);
+        };
         document.body.appendChild(script);
-    
-        // --- rest of your page script (unchanged) ---
-        const container = document.querySelector("#unity-container");
-        const canvas = document.querySelector("#unity-canvas");
-        const loadingCover = document.querySelector("#loading-cover");
-        const progressBarEmpty = document.querySelector("#unity-progress-bar-empty");
-        const progressBarFull = document.querySelector("#unity-progress-bar-full");
-        const spinner = document.querySelector('.spinner');
-    
-        const canFullscreen = (function () {
-            for (const key of [
-                'exitFullscreen',
-                'webkitExitFullscreen',
-                'webkitCancelFullScreen',
-                'mozCancelFullScreen',
-                'msExitFullscreen',
-            ]) {
-                if (key in document) {
-                    return true;
-                }
-            }
-            return false;
-        }());
-    
-        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-            container.className = "unity-mobile";
+    })();
+
+    // ---------- UI / helpers ----------
+    const container = document.querySelector("#unity-container");
+    const canvas = document.querySelector("#unity-canvas");
+    const loadingCover = document.querySelector("#loading-cover");
+    const progressBarEmpty = document.querySelector("#unity-progress-bar-empty");
+    const progressBarFull = document.querySelector("#unity-progress-bar-full");
+    const spinner = document.querySelector('.spinner');
+
+    const canFullscreen = (function () {
+        for (const key of [
+            'exitFullscreen',
+            'webkitExitFullscreen',
+            'webkitCancelFullScreen',
+            'mozCancelFullScreen',
+            'msExitFullscreen',
+        ]) {
+            if (key in document) return true;
         }
-    
-        loadingCover.style.background = "url('background.png') center / cover";
-        loadingCover.style.display = "";
-    
-        document.addEventListener('contextmenu', event => event.preventDefault());
-    
-        function FocusGame() {
+        return false;
+    }());
+
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        container.className = "unity-mobile";
+    }
+
+    loadingCover.style.background = "url('background.png') center / cover";
+    loadingCover.style.display = "";
+
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    function FocusGame() {
+        try {
             window.focus();
             canvas.focus();
-        }
-    
-        window.addEventListener('pointerdown', FocusGame);
-        window.addEventListener('touchstart', FocusGame);
-    
-        let StartUnityInstance;
-        let myGameInstance;
-        let ysdk = null;
-    
-        window.environmentData = {
-            language: "en",
-            domain: "default_domain",
-            deviceType: "desktop",
-            isMobile: false,
-            isDesktop: true,
-            isTablet: false,
-            isTV: false,
-            appID: "default_app_id",
-            browserLang: navigator.language || "en",
-            payload: null,
-            promptCanShow: false,
-            reviewCanShow: false,
-            platform: navigator.platform,
-            browser: (function() {
-                let userAgent = navigator.userAgent;
-                if (userAgent.includes("YaBrowser")) return "Yandex";
-                if (userAgent.includes("OPR") || userAgent.includes("Opera")) return "Opera";
-                if (userAgent.includes("Firefox")) return "Firefox";
-                if (userAgent.includes("MSIE") || userAgent.includes("Trident")) return "IE";
-                if (userAgent.includes("Edge")) return "Edge";
-                if (userAgent.includes("Chrome")) return "Chrome";
-                if (userAgent.includes("Safari")) return "Safari";
-                return "Other";
-            })()
-        };
-    
-        // (keep the rest of your helper functions unchanged)
-        function GetPayments() { console.warn("GetPayments is not implemented"); return Promise.resolve("none"); }
-        function SaveCloud() { console.warn("SaveCloud is not implemented"); }
-        function LoadCloud() { console.warn("LoadCloud is not implemented"); return Promise.resolve("noData"); }
-        function InitPlayer() { console.warn("InitPlayer is not implemented"); return Promise.resolve("noData"); }
-    
-        function FullAdShow() { /* ... */ }
-        function RewardedShow(rewardId) { /* ... */ }
-        function StickyAdActivity() { console.warn("StickyAdActivity is not implemented"); }
-        function Review() { console.warn("Review is not implemented"); }
-        function PromptShow() { console.warn("PromptShow is not implemented"); }
-        function InitLeaderboards() { console.warn("InitLeaderboards is not implemented"); }
-        function GetLeaderboardScores() { console.warn("GetLeaderboardScores is not implemented"); }
-        function SetLeaderboardScores() { console.warn("SetLeaderboardScores is not implemented"); }
-        function ConsumePurchase() { console.warn("ConsumePurchase is not implemented"); }
-        function ConsumePurchases() { console.warn("ConsumePurchases is not implemented"); }
-    
-        function InitGame() {
-            try {
-                console.log('Init Game Success');
-                initGame = true;
-                if (nowFullAdOpen === true && myGameInstance != null) {
-                    myGameInstance.SendMessage('YandexGame', 'OpenFullAd');
-                }
-            } catch (error) {
-                console.error("InitGame error:", error);
+        } catch (e) { /* ignore */ }
+    }
+
+    window.addEventListener('pointerdown', FocusGame);
+    window.addEventListener('touchstart', FocusGame);
+
+    let StartUnityInstance;
+    let myGameInstance;
+    let ysdk = null;
+
+    window.environmentData = {
+        language: "en",
+        domain: "default_domain",
+        deviceType: "desktop",
+        isMobile: false,
+        isDesktop: true,
+        isTablet: false,
+        isTV: false,
+        appID: "default_app_id",
+        browserLang: navigator.language || "en",
+        payload: null,
+        promptCanShow: false,
+        reviewCanShow: false,
+        platform: navigator.platform,
+        browser: (function() {
+            let userAgent = navigator.userAgent;
+            if (userAgent.includes("YaBrowser")) return "Yandex";
+            if (userAgent.includes("OPR") || userAgent.includes("Opera")) return "Opera";
+            if (userAgent.includes("Firefox")) return "Firefox";
+            if (userAgent.includes("MSIE") || userAgent.includes("Trident")) return "IE";
+            if (userAgent.includes("Edge")) return "Edge";
+            if (userAgent.includes("Chrome")) return "Chrome";
+            if (userAgent.includes("Safari")) return "Safari";
+            return "Other";
+        })()
+    };
+
+    // ---------- placeholder platform functions ----------
+    function GetPayments() { console.warn("GetPayments is not implemented"); return Promise.resolve("none"); }
+    function SaveCloud() { console.warn("SaveCloud is not implemented"); }
+    function LoadCloud() { console.warn("LoadCloud is not implemented"); return Promise.resolve("noData"); }
+    function InitPlayer() { console.warn("InitPlayer is not implemented"); return Promise.resolve("noData"); }
+
+    function FullAdShow() { /* implement if needed */ }
+    function RewardedShow(rewardId) { /* implement if needed */ }
+    function StickyAdActivity() { console.warn("StickyAdActivity is not implemented"); }
+    function Review() { console.warn("Review is not implemented"); }
+    function PromptShow() { console.warn("PromptShow is not implemented"); }
+    function InitLeaderboards() { console.warn("InitLeaderboards is not implemented"); }
+    function GetLeaderboardScores() { console.warn("GetLeaderboardScores is not implemented"); }
+    function SetLeaderboardScores() { console.warn("SetLeaderboardScores is not implemented"); }
+    function ConsumePurchase() { console.warn("ConsumePurchase is not implemented"); }
+    function ConsumePurchases() { console.warn("ConsumePurchases is not implemented"); }
+
+    function InitGame() {
+        try {
+            console.log('Init Game Success');
+            initGame = true;
+            if (nowFullAdOpen === true && window.myGameInstance != null) {
+                window.myGameInstance.SendMessage('YandexGame', 'OpenFullAd');
             }
+        } catch (error) {
+            console.error("InitGame error:", error);
         }
-    
-        window.addEventListener("unhandledrejection", function(event) {
-            console.warn("Unhandled rejection ignored:", event.reason);
-            event.preventDefault();
-        });
+    }
+
+    window.addEventListener("unhandledrejection", function(event) {
+        console.warn("Unhandled rejection ignored:", event.reason);
+        event.preventDefault();
+    });
     </script>
 </body>
 </html>
