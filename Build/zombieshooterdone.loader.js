@@ -18,7 +18,7 @@ window.PlayerPrefs = {
     },
 
     Save: function () {
-        // Nothing needed ¡ª localStorage saves instantly
+        // Nothing needed Â¡Âª localStorage saves instantly
         console.log("PlayerPrefs saved");
     }
 };
