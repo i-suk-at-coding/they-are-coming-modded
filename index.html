@@ -52,13 +52,16 @@
             productName: "They Are Coming",
             productVersion: "1.19"
         };
-
+    
+        // Keep the part list for reference only; Unity loader will handle parts automatically.
         const wasmParts = [
             `${buildUrl}/zombieshooterdone.wasm.br.part0`,
             `${buildUrl}/zombieshooterdone.wasm.br.part1`,
             `${buildUrl}/zombieshooterdone.wasm.br.part2`,
             `${buildUrl}/zombieshooterdone.wasm.br.part3`
         ];
+    
+        // Load the Unity loader script and let Unity handle fetching and assembling the .wasm parts.
         const script = document.createElement("script");
         script.src = loaderUrl;
         script.onload = () => {
@@ -73,14 +76,15 @@
             });
         };
         document.body.appendChild(script);
-
+    
+        // --- rest of your page script (unchanged) ---
         const container = document.querySelector("#unity-container");
         const canvas = document.querySelector("#unity-canvas");
         const loadingCover = document.querySelector("#loading-cover");
         const progressBarEmpty = document.querySelector("#unity-progress-bar-empty");
         const progressBarFull = document.querySelector("#unity-progress-bar-full");
         const spinner = document.querySelector('.spinner');
-
+    
         const canFullscreen = (function () {
             for (const key of [
                 'exitFullscreen',
@@ -95,31 +99,29 @@
             }
             return false;
         }());
-
+    
         if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
             container.className = "unity-mobile";
-
         }
-
+    
         loadingCover.style.background = "url('background.png') center / cover";
-
         loadingCover.style.display = "";
-
+    
         document.addEventListener('contextmenu', event => event.preventDefault());
-
+    
         function FocusGame() {
             window.focus();
             canvas.focus();
         }
-
+    
         window.addEventListener('pointerdown', FocusGame);
         window.addEventListener('touchstart', FocusGame);
-
+    
         let StartUnityInstance;
         let myGameInstance;
-        let ysdk = null; // Yandex SDK pasif
-
-        let environmentData = {
+        let ysdk = null;
+    
+        window.environmentData = {
             language: "en",
             domain: "default_domain",
             deviceType: "desktop",
@@ -133,7 +135,7 @@
             promptCanShow: false,
             reviewCanShow: false,
             platform: navigator.platform,
-            browser: (function () {
+            browser: (function() {
                 let userAgent = navigator.userAgent;
                 if (userAgent.includes("YaBrowser")) return "Yandex";
                 if (userAgent.includes("OPR") || userAgent.includes("Opera")) return "Opera";
@@ -145,34 +147,24 @@
                 return "Other";
             })()
         };
-
-        let cloudSaves = 'noData';
-        let paymentsData = 'none';
-        let playerData = 'noData'; // Varsayılan playerData tanımı
-        let player = null;
-        let payments = null;
-        let initGame = false;
-        let nowFullAdOpen = false;
-
-        //
-        function GetPayments() {return Promise.resolve("none"); }
-        function SaveCloud() {}
-        function LoadCloud() {return Promise.resolve("noData"); }
-        function InitPlayer() {return Promise.resolve("noData"); }
-
-
-        function FullAdShow() {}
-        function RewardedShow(rewardId) {}
-        function StickyAdActivity() {}
-        function Review() {}
-        function PromptShow() {}
-        function InitLeaderboards() {}
-        function GetLeaderboardScores() {}
-        function SetLeaderboardScores() {}
-        function ConsumePurchase() {}
-        function ConsumePurchases() {} //
-
-
+    
+        // (keep the rest of your helper functions unchanged)
+        function GetPayments() { console.warn("GetPayments is not implemented"); return Promise.resolve("none"); }
+        function SaveCloud() { console.warn("SaveCloud is not implemented"); }
+        function LoadCloud() { console.warn("LoadCloud is not implemented"); return Promise.resolve("noData"); }
+        function InitPlayer() { console.warn("InitPlayer is not implemented"); return Promise.resolve("noData"); }
+    
+        function FullAdShow() { /* ... */ }
+        function RewardedShow(rewardId) { /* ... */ }
+        function StickyAdActivity() { console.warn("StickyAdActivity is not implemented"); }
+        function Review() { console.warn("Review is not implemented"); }
+        function PromptShow() { console.warn("PromptShow is not implemented"); }
+        function InitLeaderboards() { console.warn("InitLeaderboards is not implemented"); }
+        function GetLeaderboardScores() { console.warn("GetLeaderboardScores is not implemented"); }
+        function SetLeaderboardScores() { console.warn("SetLeaderboardScores is not implemented"); }
+        function ConsumePurchase() { console.warn("ConsumePurchase is not implemented"); }
+        function ConsumePurchases() { console.warn("ConsumePurchases is not implemented"); }
+    
         function InitGame() {
             try {
                 console.log('Init Game Success');
@@ -181,13 +173,12 @@
                     myGameInstance.SendMessage('YandexGame', 'OpenFullAd');
                 }
             } catch (error) {
-                console.error("InitGame sırasında hata:", error);
+                console.error("InitGame error:", error);
             }
         }
-
-        //
-        window.addEventListener("unhandledrejection", function (event) {
-            console.warn("Hata es geçildi:", event.reason);
+    
+        window.addEventListener("unhandledrejection", function(event) {
+            console.warn("Unhandled rejection ignored:", event.reason);
             event.preventDefault();
         });
     </script>
