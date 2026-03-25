@@ -59,45 +59,20 @@
             `${buildUrl}/zombieshooterdone.wasm.br.part2`,
             `${buildUrl}/zombieshooterdone.wasm.br.part3`
         ];
-
-        async function fetchAndMergeWasm() {
-            const parts = await Promise.all(wasmParts.map(url =>
-                fetch(url).then(r => {
-                    if (!r.ok) throw new Error(`Failed to load ${url}`);
-                    return r.arrayBuffer();
-                })
-            ));
-            const totalLength = parts.reduce((sum, part) => sum + part.byteLength, 0);
-            const merged = new Uint8Array(totalLength);
-            let offset = 0;
-            for (const part of parts) {
-                merged.set(new Uint8Array(part), offset);
-                offset += part.byteLength;
-            }
-            const blob = new Blob([merged], { type: "application/wasm+br" });
-            return URL.createObjectURL(blob);
-        }
-
-        fetchAndMergeWasm().then(blobUrl => {
-            config.codeUrl = blobUrl;
-
-            const script = document.createElement("script");
-            script.src = loaderUrl;
-            script.onload = () => {
-                createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {
-                    const loader = document.querySelector("#unity-loading-bar");
-                    if (loader) loader.style.width = `${progress * 100}%`;
-                }).then((unityInstance) => {
-                    myGameInstance = unityInstance;
-                    document.querySelector("#loading-cover").style.display = "none";
-                }).catch((message) => {
-                    console.error("Unity yükleme hatası:", message);
-                });
-            };
-            document.body.appendChild(script);
-        });
-
-
+        const script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+            createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {
+                const loader = document.querySelector("#unity-loading-bar");
+                if (loader) loader.style.width = `${progress * 100}%`;
+            }).then((unityInstance) => {
+                myGameInstance = unityInstance;
+                document.querySelector("#loading-cover").style.display = "none";
+            }).catch((message) => {
+                console.error("Unity loading error:", message);
+            });
+        };
+        document.body.appendChild(script);
 
         const container = document.querySelector("#unity-container");
         const canvas = document.querySelector("#unity-canvas");
