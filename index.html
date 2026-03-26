@@ -37,65 +37,40 @@
         </div>
     </div>
 
-    <script>
-    // ---------- CONFIG: use absolute CDN base and locateFile ----------
-    // Change CDN_BASE to your preferred CDN (rawcdn.githack used for quick testing)
-    const CDN_BASE = "https://rawcdn.githack.com/i-suk-at-coding/they-are-coming-modded/main/Build/";
+<script>
+  // Use the CDN that hosts your Build/ folder
+  const CDN_BASE = "https://rawcdn.githack.com/i-suk-at-coding/they-are-coming-modded/main/Build/";
 
-    const loaderUrl = CDN_BASE + "zombieshooterdone.loader.js";
-    const config = {
-        dataUrl: CDN_BASE + "zombieshooterdone.data.br",
-        frameworkUrl: CDN_BASE + "zombieshooterdone.framework.js",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "OnHitDev",
-        productName: "They Are Coming",
-        productVersion: "1.19",
+  const loaderUrl = CDN_BASE + "zombieshooterdone.loader.js";
+  const config = {
+    dataUrl: CDN_BASE + "zombieshooterdone.data.br",
+    frameworkUrl: CDN_BASE + "zombieshooterdone.framework.js",
+    streamingAssetsUrl: "StreamingAssets",
+    companyName: "OnHitDev",
+    productName: "They Are Coming",
+    productVersion: "1.19",
 
-        // locateFile ensures Unity always resolves build files to the CDN base
-        locateFile: (path) => {
-            // path examples: "zombieshooterdone.wasm.br.part0", "zombieshooterdone.wasm"
-            return CDN_BASE + path;
-        }
-    };
+    // Force Unity to resolve any Build file to the CDN base
+    locateFile: (path) => CDN_BASE + path
+  };
 
-    // Keep the part list for reference only; Unity loader will handle parts automatically.
-    const wasmParts = [
-        CDN_BASE + "zombieshooterdone.wasm.br.part0",
-        CDN_BASE + "zombieshooterdone.wasm.br.part1",
-        CDN_BASE + "zombieshooterdone.wasm.br.part2",
-        CDN_BASE + "zombieshooterdone.wasm.br.part3"
-    ];
-
-    // ---------- Load Unity loader script (do NOT merge wasm parts manually) ----------
-    (function loadUnity() {
-        const script = document.createElement("script");
-        script.src = loaderUrl;
-        script.crossOrigin = "anonymous";
-        script.onload = () => {
-            console.log("Unity loader loaded. Config:", {
-                loaderUrl: loaderUrl,
-                dataUrl: config.dataUrl,
-                frameworkUrl: config.frameworkUrl,
-                locateFile: "configured"
-            });
-
-            createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {
-                const loader = document.querySelector("#unity-loading-bar");
-                if (loader) loader.style.width = `${progress * 100}%`;
-            }).then((unityInstance) => {
-                window.myGameInstance = unityInstance;
-                document.querySelector("#loading-cover").style.display = "none";
-                console.log("Unity instance created.");
-            }).catch((message) => {
-                console.error("Unity loading error:", message);
-            });
-        };
-        script.onerror = (e) => {
-            console.error("Failed to load Unity loader script:", e);
-        };
-        document.body.appendChild(script);
-    })();
-
+  // Load the loader script and let Unity handle fetching/assembling the wasm parts
+  const script = document.createElement("script");
+  script.src = loaderUrl;
+  script.crossOrigin = "anonymous";
+  script.onload = () => {
+    createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {
+      const loader = document.querySelector("#unity-loading-bar");
+      if (loader) loader.style.width = `${progress * 100}%`;
+    }).then((unityInstance) => {
+      window.myGameInstance = unityInstance;
+      document.querySelector("#loading-cover").style.display = "none";
+    }).catch((message) => {
+      console.error("Unity loading error:", message);
+    });
+  };
+  script.onerror = (e) => console.error("Failed to load Unity loader script:", e);
+  document.body.appendChild(script);
     // ---------- UI / helpers ----------
     const container = document.querySelector("#unity-container");
     const canvas = document.querySelector("#unity-canvas");
